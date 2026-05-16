@@ -859,12 +859,19 @@ async function sendMsg(){
   const ty=document.createElement('div');ty.id='ty';ty.className='bwrap-ai';
   ty.innerHTML=`<div class="bav"><img src="${LOGO}" alt="PC" style="width:22px;height:22px;object-fit:contain;background:var(--navy);padding:1px;"></div><div class="bub bub-ai"><div class="typing-bub"><span></span><span></span><span></span></div></div>`;
   c.appendChild(ty);c.scrollTop=c.scrollHeight;
-  try{
-    const sys=SYSTEM.replace('{CTX}',CTXS[ctx]?.l||'Generale');
-    const r=await fetch(`${API_BASE}/chat/message`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({content:text,context:ctx})});
-    const d=await r.json();ty.remove();
-    addBub('ai',d.reply||'Si è verificato un errore. La invito a contattare direttamente il Dott. Matarrese al **328 004 3076**.');
-  }catch(e){ty.remove();addBub('ai','Problema di connessione. Può contattare direttamente il Dott. Matarrese:\n**Tel.** 328 004 3076\n**Email** cspersonalcare@gmail.com');}
+  let attempts=0;
+  while(attempts<3){
+    try{
+      const r=await fetch(`${API_BASE}/chat/message`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({content:text,context:ctx})});
+      const d=await r.json();ty.remove();
+      addBub('ai',d.reply||'Si è verificato un errore. La invito a contattare direttamente il Dott. Matarrese al **328 004 3076**.');
+      break;
+    }catch(e){
+      attempts++;
+      if(attempts>=3){ty.remove();addBub('ai','Problema di connessione. Può contattare direttamente il Dott. Matarrese:\n**Tel.** 328 004 3076\n**Email** cspersonalcare@gmail.com');break;}
+      await new Promise(res=>setTimeout(res,2000));
+    }
+  }
   busy=false;document.getElementById('send-btn').disabled=false;
 }
 
